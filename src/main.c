@@ -15,11 +15,13 @@ int main(int argc, char *argv[]) {
     int dbfd;
 	int clf;
     char* filepath = NULL;
+    char* addstring = NULL;
+    bool list = false;
     bool newfile = false;
     struct dbheader_t* dbhdr = NULL;
     struct employee_t* employees = NULL;
 
-    while((clf = getopt(argc, argv, "nf:")) != -1){
+    while((clf = getopt(argc, argv, "nf:a:l")) != -1){
         switch (clf){
             case 'n':
                 newfile = true;
@@ -27,6 +29,14 @@ int main(int argc, char *argv[]) {
             
             case 'f':
                 filepath = optarg;
+                break;
+            
+            case 'a':
+                addstring = optarg;
+                break;
+            
+            case 'l':
+                list = true;
                 break;
 
             case '?':
@@ -56,9 +66,33 @@ int main(int argc, char *argv[]) {
                     return -1;
                     }
                 }
-                printf("Header validation completed\n");
             }
+    else{
+        dbfd = open_db_file(filepath);
+
+        if(validate_db_header(dbfd, &dbhdr) != STATUS_SUCCESS){
+            printf("Failed to open %s", filepath);
+            return -1;
+        }
+
+    }
+
+        if(read_employees(dbfd, dbhdr, &employees) != STATUS_SUCCESS){
+            printf("Failed to read employees\n");
+            return -1;
+            }
+        
+        if(addstring){
+            dbhdr -> count++;
+            employees = realloc(employees, (dbhdr -> count) * sizeof(struct employee_t));
+            add_employee(dbhdr, employees, addstring);
+        }
+
+        if(list){
+            list_employees(dbhdr, employees);
+        }
     
-            //output_file(dbfd, dbhdr);
+            output_file(dbfd, dbhdr, employees);
+
     return 0;
     }
